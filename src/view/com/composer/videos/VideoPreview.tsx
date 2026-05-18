@@ -1,8 +1,10 @@
 import {useRef, useState} from 'react'
-import {View} from 'react-native'
+import {Pressable, View} from 'react-native'
 import {Image} from 'expo-image'
 import {type ImagePickerAsset} from 'expo-image-picker'
 import {BlueskyVideoView} from '@bsky.app/video'
+import {msg} from '@lingui/core/macro'
+import {useLingui} from '@lingui/react'
 
 import {type CompressedVideo} from '#/lib/media/video/types'
 import {useAutoplayDisabled} from '#/state/preferences'
@@ -10,6 +12,7 @@ import {ExternalEmbedRemoveBtn} from '#/view/com/composer/ExternalEmbedRemoveBtn
 import {atoms as a} from '#/alf'
 import {ConstrainedImage} from '#/components/images/AutoSizedImage'
 import {useVideoMuteState} from '#/components/Post/Embed/VideoEmbed/VideoVolumeContext'
+import {PlayButtonIcon} from '#/components/video/PlayButtonIcon'
 import {VideoPresentationControls} from '#/components/video/VideoPresentationControls'
 import {VideoTranscodeBackdrop} from './VideoTranscodeBackdrop'
 
@@ -24,11 +27,14 @@ export function VideoPreview({
   isActivePost: boolean
   clear: () => void
 }) {
+  const {_} = useLingui()
   const playerRef = useRef<BlueskyVideoView>(null)
   const autoplayDisabled = useAutoplayDisabled()
   const [muted, setMuted] = useVideoMuteState()
   const [isPlaying, setIsPlaying] = useState(false)
   const [timeRemaining, setTimeRemaining] = useState(0)
+  const [userInitiatedPlayback, setUserInitiatedPlayback] = useState(false)
+  const showPlayer = !autoplayDisabled || userInitiatedPlayback
 
   let aspectRatio: number | undefined
   if (asset.width && asset.height) {
@@ -64,12 +70,12 @@ export function VideoPreview({
                   cachePolicy="none"
                   contentFit="contain"
                 />
-              ) : (
+              ) : showPlayer ? (
                 <>
                   <BlueskyVideoView
                     url={video.uri}
-                    autoplay={!autoplayDisabled}
-                    beginMuted={autoplayDisabled ? false : muted}
+                    autoplay={true}
+                    beginMuted={muted}
                     forceTakeover={true}
                     ref={playerRef}
                     onMutedChange={e => {
@@ -97,6 +103,20 @@ export function VideoPreview({
                     muted={muted}
                   />
                 </>
+              ) : (
+                <Pressable
+                  onPress={() => setUserInitiatedPlayback(true)}
+                  style={[
+                    a.absolute,
+                    a.inset_0,
+                    a.justify_center,
+                    a.align_center,
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel={_(msg`Play video`)}
+                  accessibilityHint={_(msg`Plays the attached video`)}>
+                  <PlayButtonIcon />
+                </Pressable>
               )}
             </>
           )}
