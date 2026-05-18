@@ -1,4 +1,4 @@
-import {useRef} from 'react'
+import {useRef, useState} from 'react'
 import {View} from 'react-native'
 import {Image} from 'expo-image'
 import {type ImagePickerAsset} from 'expo-image-picker'
@@ -9,7 +9,8 @@ import {useAutoplayDisabled} from '#/state/preferences'
 import {ExternalEmbedRemoveBtn} from '#/view/com/composer/ExternalEmbedRemoveBtn'
 import {atoms as a} from '#/alf'
 import {ConstrainedImage} from '#/components/images/AutoSizedImage'
-import {PlayButtonIcon} from '#/components/video/PlayButtonIcon'
+import {useVideoMuteState} from '#/components/Post/Embed/VideoEmbed/VideoVolumeContext'
+import {VideoPresentationControls} from '#/components/video/VideoPresentationControls'
 import {VideoTranscodeBackdrop} from './VideoTranscodeBackdrop'
 
 export function VideoPreview({
@@ -25,6 +26,9 @@ export function VideoPreview({
 }) {
   const playerRef = useRef<BlueskyVideoView>(null)
   const autoplayDisabled = useAutoplayDisabled()
+  const [muted, setMuted] = useVideoMuteState()
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [timeRemaining, setTimeRemaining] = useState(0)
 
   let aspectRatio: number | undefined
   if (asset.width && asset.height) {
@@ -61,23 +65,42 @@ export function VideoPreview({
                   contentFit="contain"
                 />
               ) : (
-                <BlueskyVideoView
-                  url={video.uri}
-                  autoplay={!autoplayDisabled}
-                  beginMuted={true}
-                  forceTakeover={true}
-                  ref={playerRef}
-                />
+                <>
+                  <BlueskyVideoView
+                    url={video.uri}
+                    autoplay={!autoplayDisabled}
+                    beginMuted={autoplayDisabled ? false : muted}
+                    forceTakeover={true}
+                    ref={playerRef}
+                    onMutedChange={e => {
+                      setMuted(e.nativeEvent.isMuted)
+                    }}
+                    onStatusChange={e => {
+                      setIsPlaying(e.nativeEvent.status === 'playing')
+                    }}
+                    onTimeRemainingChange={e => {
+                      setTimeRemaining(e.nativeEvent.timeRemaining)
+                    }}
+                  />
+                  <VideoPresentationControls
+                    enterFullscreen={() => {
+                      playerRef.current?.enterFullscreen(true)
+                    }}
+                    toggleMuted={() => {
+                      playerRef.current?.toggleMuted()
+                    }}
+                    togglePlayback={() => {
+                      playerRef.current?.togglePlayback()
+                    }}
+                    isPlaying={isPlaying}
+                    timeRemaining={timeRemaining}
+                    muted={muted}
+                  />
+                </>
               )}
             </>
           )}
           <ExternalEmbedRemoveBtn onRemove={clear} />
-          {autoplayDisabled && (
-            <View
-              style={[a.absolute, a.inset_0, a.justify_center, a.align_center]}>
-              <PlayButtonIcon />
-            </View>
-          )}
         </View>
       </ConstrainedImage>
     </View>

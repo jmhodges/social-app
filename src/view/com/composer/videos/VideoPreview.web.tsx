@@ -9,7 +9,6 @@ import {ExternalEmbedRemoveBtn} from '#/view/com/composer/ExternalEmbedRemoveBtn
 import {atoms as a} from '#/alf'
 import {ConstrainedImage} from '#/components/images/AutoSizedImage'
 import * as Toast from '#/components/Toast'
-import {PlayButtonIcon} from '#/components/video/PlayButtonIcon'
 
 export function VideoPreview({
   asset,
@@ -53,34 +52,22 @@ export function VideoPreview({
               alt="GIF"
             />
           ) : (
-            <>
-              <video
-                src={video.uri}
-                style={{width: '100%', height: '100%', objectFit: 'contain'}}
-                autoPlay={!autoplayDisabled}
-                loop
-                muted
-                playsInline
-                onError={err => {
-                  console.error('Error loading video', err)
-                  Toast.show(_(msg`Could not process your video`), {
-                    type: 'error',
-                  })
-                  clear()
-                }}
-              />
-              {autoplayDisabled && (
-                <View
-                  style={[
-                    a.absolute,
-                    a.inset_0,
-                    a.justify_center,
-                    a.align_center,
-                  ]}>
-                  <PlayButtonIcon />
-                </View>
-              )}
-            </>
+            <video
+              src={video.uri}
+              style={{width: '100%', height: '100%', objectFit: 'contain'}}
+              autoPlay={!autoplayDisabled}
+              muted
+              playsInline
+              controls
+              controlsList="nodownload"
+              onError={err => {
+                console.error('Error loading video', err)
+                Toast.show(_(msg`Could not process your video`), {
+                  type: 'error',
+                })
+                clear()
+              }}
+            />
           )}
           <ExternalEmbedRemoveBtn onRemove={clear} />
         </View>
