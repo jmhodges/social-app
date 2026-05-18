@@ -74,13 +74,21 @@ export function VideoPreview({
                   clear()
                 }}
               />
-              {autoplayDisabled && !isPlaying && (
+              {autoplayDisabled && (
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel={l`Play video`}
+                  accessibilityLabel={
+                    isPlaying ? l`Pause video` : l`Play video`
+                  }
                   accessibilityHint=""
                   onPress={() => {
-                    videoRef.current?.play()
+                    const el = videoRef.current
+                    if (!el) return
+                    if (el.paused) {
+                      el.play()
+                    } else {
+                      el.pause()
+                    }
                   }}
                   style={[
                     a.absolute,
@@ -88,7 +96,7 @@ export function VideoPreview({
                     a.justify_center,
                     a.align_center,
                   ]}>
-                  <PlayButtonIcon />
+                  {!isPlaying && <PlayButtonIcon />}
                 </Pressable>
               )}
             </>
