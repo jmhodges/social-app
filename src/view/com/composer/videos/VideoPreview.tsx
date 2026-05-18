@@ -1,8 +1,9 @@
-import {useRef} from 'react'
-import {View} from 'react-native'
+import {useRef, useState} from 'react'
+import {Pressable, View} from 'react-native'
 import {Image} from 'expo-image'
 import {type ImagePickerAsset} from 'expo-image-picker'
 import {BlueskyVideoView} from '@bsky.app/video'
+import {useLingui} from '@lingui/react/macro'
 
 import {type CompressedVideo} from '#/lib/media/video/types'
 import {useAutoplayDisabled} from '#/state/preferences'
@@ -23,8 +24,11 @@ export function VideoPreview({
   isActivePost: boolean
   clear: () => void
 }) {
+  const {t: l} = useLingui()
   const playerRef = useRef<BlueskyVideoView>(null)
   const autoplayDisabled = useAutoplayDisabled()
+  const isGif = video.mimeType === 'image/gif'
+  const [isPlaying, setIsPlaying] = useState(false)
 
   let aspectRatio: number | undefined
   if (asset.width && asset.height) {
@@ -51,7 +55,7 @@ export function VideoPreview({
           </View>
           {isActivePost && (
             <>
-              {video.mimeType === 'image/gif' ? (
+              {isGif ? (
                 <Image
                   style={[a.flex_1]}
                   autoplay={!autoplayDisabled}
@@ -66,18 +70,42 @@ export function VideoPreview({
                   autoplay={!autoplayDisabled}
                   beginMuted={true}
                   forceTakeover={true}
+                  onStatusChange={e => {
+                    setIsPlaying(e.nativeEvent.status === 'playing')
+                  }}
                   ref={playerRef}
                 />
               )}
             </>
           )}
           <ExternalEmbedRemoveBtn onRemove={clear} />
-          {autoplayDisabled && (
-            <View
-              style={[a.absolute, a.inset_0, a.justify_center, a.align_center]}>
-              <PlayButtonIcon />
-            </View>
-          )}
+          {autoplayDisabled &&
+            !isPlaying &&
+            (isGif ? (
+              <View
+                style={[
+                  a.absolute,
+                  a.inset_0,
+                  a.justify_center,
+                  a.align_center,
+                ]}>
+                <PlayButtonIcon />
+              </View>
+            ) : (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={l`Play video`}
+                accessibilityHint=""
+                onPress={() => playerRef.current?.togglePlayback()}
+                style={[
+                  a.absolute,
+                  a.inset_0,
+                  a.justify_center,
+                  a.align_center,
+                ]}>
+                <PlayButtonIcon />
+              </Pressable>
+            ))}
         </View>
       </ConstrainedImage>
     </View>

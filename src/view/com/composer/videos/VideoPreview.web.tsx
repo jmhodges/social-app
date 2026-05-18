@@ -1,7 +1,7 @@
-import {View} from 'react-native'
+import {useRef, useState} from 'react'
+import {Pressable, View} from 'react-native'
 import {type ImagePickerAsset} from 'expo-image-picker'
-import {msg} from '@lingui/core/macro'
-import {useLingui} from '@lingui/react'
+import {useLingui} from '@lingui/react/macro'
 
 import {type CompressedVideo} from '#/lib/media/video/types'
 import {useAutoplayDisabled} from '#/state/preferences'
@@ -21,10 +21,12 @@ export function VideoPreview({
   isActivePost: boolean
   clear: () => void
 }) {
-  const {_} = useLingui()
+  const {t: l} = useLingui()
   // TODO: figure out how to pause a GIF for reduced motion
   // it's not possible using an img tag -sfn
   const autoplayDisabled = useAutoplayDisabled()
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const [isPlaying, setIsPlaying] = useState(!autoplayDisabled)
 
   let aspectRatio: number | undefined
   if (asset.width && asset.height) {
@@ -55,22 +57,31 @@ export function VideoPreview({
           ) : (
             <>
               <video
+                ref={videoRef}
                 src={video.uri}
                 style={{width: '100%', height: '100%', objectFit: 'contain'}}
                 autoPlay={!autoplayDisabled}
                 loop
                 muted
                 playsInline
+                onPlay={() => setIsPlaying(true)}
+                onPause={() => setIsPlaying(false)}
                 onError={err => {
                   console.error('Error loading video', err)
-                  Toast.show(_(msg`Could not process your video`), {
+                  Toast.show(l`Could not process your video`, {
                     type: 'error',
                   })
                   clear()
                 }}
               />
-              {autoplayDisabled && (
-                <View
+              {autoplayDisabled && !isPlaying && (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={l`Play video`}
+                  accessibilityHint=""
+                  onPress={() => {
+                    videoRef.current?.play()
+                  }}
                   style={[
                     a.absolute,
                     a.inset_0,
@@ -78,7 +89,7 @@ export function VideoPreview({
                     a.align_center,
                   ]}>
                   <PlayButtonIcon />
-                </View>
+                </Pressable>
               )}
             </>
           )}
