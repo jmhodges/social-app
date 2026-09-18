@@ -100,9 +100,8 @@ const ImageAltTextInner = ({
         : (maxWidth / source.width) * source.height
     /*
      * On native the image is a reference for the writer, not a preview: cap
-     * it so the header, image, label and field all fit above the keyboard.
-     * When they don't, iOS scrolls only far enough to reveal the caret and
-     * leaves the rest of the field hidden under the keyboard.
+     * it so as much of it as possible shows in the space left under the field
+     * once the keyboard is up.
      */
     const maxHeight = IS_WEB ? Infinity : screenHeight * 0.3
 
@@ -157,21 +156,9 @@ const ImageAltTextInner = ({
         </Dialog.Header>
       }>
       <View style={[a.pt_lg, a.gap_md, IS_LIQUID_GLASS ? a.px_2xl : a.px_xl]}>
-        <View style={[t.atoms.bg_contrast_50, a.rounded_sm, a.overflow_hidden]}>
-          <Image
-            style={imageStyle}
-            source={{uri: (image.transformed ?? image.source).path}}
-            contentFit="contain"
-            accessible={true}
-            accessibilityIgnoresInvertColors
-            enableLiveTextInteraction
-            autoplay={false}
-          />
-        </View>
-
         {/*
-         * The input is the last thing in the sheet so that, with the keyboard
-         * up, it gets the room that a button row underneath it used to take.
+         * The field comes first so it is always fully visible above the
+         * keyboard. The image sits below it and scrolls into view as needed.
          */}
         <View style={[a.gap_sm]}>
           <View>
@@ -180,7 +167,12 @@ const ImageAltTextInner = ({
                 <Trans>Descriptive alt text</Trans>
               </TextField.LabelText>
               <CharProgress
-                style={[a.mb_sm]}
+                /*
+                 * The inner count Text uses flexGrow, which Yoga sizes to
+                 * nothing inside an auto-width container. The composer footer
+                 * gives it a fixed width for the same reason.
+                 */
+                style={[a.mb_sm, {minWidth: 65}]}
                 textStyle={[a.text_sm, t.atoms.text_contrast_medium]}
                 size={20}
                 count={altText.length}
@@ -218,6 +210,18 @@ const ImageAltTextInner = ({
               </Text>
             </View>
           )}
+        </View>
+
+        <View style={[t.atoms.bg_contrast_50, a.rounded_sm, a.overflow_hidden]}>
+          <Image
+            style={imageStyle}
+            source={{uri: (image.transformed ?? image.source).path}}
+            contentFit="contain"
+            accessible={true}
+            accessibilityIgnoresInvertColors
+            enableLiveTextInteraction
+            autoplay={false}
+          />
         </View>
       </View>
     </Dialog.ScrollableInner>
