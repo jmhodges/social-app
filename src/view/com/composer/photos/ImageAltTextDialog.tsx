@@ -81,7 +81,7 @@ const ImageAltTextInner = ({
 }): React.ReactNode => {
   const {t: l, i18n} = useLingui()
   const t = useTheme()
-  const {width: screenWidth} = useWindowDimensions()
+  const {width: screenWidth, height: screenHeight} = useWindowDimensions()
   const isUnchanged = altText === image.alt
 
   const imageStyle = useMemo<ImageStyle>(() => {
@@ -90,21 +90,28 @@ const ImageAltTextInner = ({
       : screenWidth - // account for dialog padding
         2 * (IS_LIQUID_GLASS ? tokens.space._2xl : tokens.space.xl)
     const source = image.transformed ?? image.source
+    /*
+     * Portrait images get a square box (the image is letterboxed inside it by
+     * contentFit), landscape images get their natural height at this width.
+     */
+    const naturalHeight =
+      source.height > source.width
+        ? maxWidth
+        : (maxWidth / source.width) * source.height
+    /*
+     * On native the image is a reference for the writer, not a preview: cap
+     * it so the header, image, label and field all fit above the keyboard.
+     * When they don't, iOS scrolls only far enough to reveal the caret and
+     * leaves the rest of the field hidden under the keyboard.
+     */
+    const maxHeight = IS_WEB ? Infinity : screenHeight * 0.3
 
-    if (source.height > source.width) {
-      return {
-        resizeMode: 'contain',
-        width: '100%',
-        aspectRatio: 1,
-        borderRadius: 8,
-      }
-    }
     return {
       width: '100%',
-      height: (maxWidth / source.width) * source.height,
+      height: Math.min(naturalHeight, maxHeight),
       borderRadius: 8,
     }
-  }, [image, screenWidth])
+  }, [image, screenWidth, screenHeight])
 
   const cancelButton = () => (
     <Button
