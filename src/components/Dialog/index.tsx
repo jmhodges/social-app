@@ -79,8 +79,19 @@ export function Outer({
   )
 
   const [disableDrag, setDisableDrag] = useState(false)
+  /*
+   * A `fullHeight` sheet only has the Full snap point and presents straight
+   * into it on both platforms, so seed the state to match rather than waiting
+   * for the native snap point event. That event lands after the sheet is
+   * already up, and by then an `autoFocus` input has raised the keyboard while
+   * the inner ScrollView still had keyboard insets disabled. iOS only adjusts
+   * insets for keyboard frame changes that happen after the prop is enabled,
+   * so the first keyboard would sit on top of the input.
+   */
   const [snapPoint, setSnapPoint] = useState<BottomSheetSnapPoint>(
-    BottomSheetSnapPoint.Partial,
+    nativeOptions?.fullHeight
+      ? BottomSheetSnapPoint.Full
+      : BottomSheetSnapPoint.Partial,
   )
 
   const callQueuedCallbacks = useCallback(() => {
